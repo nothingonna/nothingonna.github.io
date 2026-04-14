@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sağlık Rehberim | VKİ ve Kalori Hesaplayıcı</title>
+    <style>
+        :root {
+            --primary: #2ecc71;
+            --secondary: #3498db;
+            --dark: #2c3e50;
+            --light: #f4f7f6;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light);
+            color: var(--dark);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+        h1 { text-align: center; color: var(--primary); margin-bottom: 1.5rem; }
+        .input-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 1rem;
+        }
+        button:hover { background-color: #27ae60; }
+        #results {
+            margin-top: 2rem;
+            padding: 1rem;
+            border-radius: 8px;
+            background: #eef9f1;
+            display: none;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 0.3rem;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: white;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Sağlık Asistanı</h1>
+    
+    <div class="input-group">
+        <label>Cinsiyet</label>
+        <select id="gender">
+            <option value="male">Erkek</option>
+            <option value="female">Kadın</option>
+        </select>
+    </div>
+
+    <div class="input-group">
+        <label>Boy (cm)</label>
+        <input type="number" id="height" placeholder="Örn: 175">
+    </div>
+
+    <div class="input-group">
+        <label>Kilo (kg)</label>
+        <input type="number" id="weight" placeholder="Örn: 70">
+    </div>
+
+    <div class="input-group">
+        <label>Yaş</label>
+        <input type="number" id="age" placeholder="Örn: 25">
+    </div>
+
+    <div class="input-group">
+        <label>Hedefiniz</label>
+        <select id="goal">
+            <option value="0">Kiloyu Koru</option>
+            <option value="-500">Yağ Yak / Zayıfla (-500 kcal)</option>
+            <option value="500">Kas Yap / Kilo Al (+500 kcal)</option>
+        </select>
+    </div>
+
+    <button onclick="calculate()">Hesapla</button>
+
+    <div id="results">
+        <div class="result-item">
+            <span>VKİ:</span>
+            <strong id="bmi-val">-</strong>
+        </div>
+        <div class="result-item">
+            <span>Durum:</span>
+            <span id="bmi-status" class="badge">-</span>
+        </div>
+        <div class="result-item">
+            <span>İdeal Kilo:</span>
+            <strong id="ideal-weight">-</strong>
+        </div>
+        <div class="result-item">
+            <span>Günlük Kcal İhtiyacı:</span>
+            <strong id="target-kcal">-</strong>
+        </div>
+    </div>
+</div>
+
+<script>
+    function calculate() {
+        const gender = document.getElementById('gender').value;
+        const height = parseFloat(document.getElementById('height').value);
+        const weight = parseFloat(document.getElementById('weight').value);
+        const age = parseInt(document.getElementById('age').value);
+        const goalModifier = parseInt(document.getElementById('goal').value);
+
+        if (!height || !weight || !age) {
+            alert("Lütfen tüm alanları doldurun!");
+            return;
+        }
+
+        // 1. VKİ Hesaplama
+        const bmi = weight / ((height/100) ** 2);
+        document.getElementById('bmi-val').innerText = bmi.toFixed(1);
+        
+        let status = "";
+        let color = "";
+        if(bmi < 18.5) { status = "Zayıf"; color = "#f1c40f"; }
+        else if(bmi < 25) { status = "Normal"; color = "#2ecc71"; }
+        else if(bmi < 30) { status = "Fazla Kilolu"; color = "#e67e22"; }
+        else { status = "Obez"; color = "#e74c3c"; }
+        
+        const statusBadge = document.getElementById('bmi-status');
+        statusBadge.innerText = status;
+        statusBadge.style.backgroundColor = color;
+
+        // 2. İdeal Kilo (Miller Formülü)
+        let ideal;
+        if(gender === 'male') {
+            ideal = 56.2 + 1.41 * ((height - 152) / 2.54);
+        } else {
+            ideal = 53.1 + 1.36 * ((height - 152) / 2.54);
+        }
+        document.getElementById('ideal-weight').innerText = ideal.toFixed(1) + " kg";
+
+        // 3. Günlük Kalori (Mifflin-St Jeor + Orta Aktivite)
+        let bmr;
+        if(gender === 'male') {
+            bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
+        } else {
+            bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
+        }
+        
+        const maintenance = bmr * 1.4; // Orta seviye aktivite çarpanı
+        const target = maintenance + goalModifier;
+        document.getElementById('target-kcal').innerText = Math.round(target) + " kcal";
+
+        document.getElementById('results').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
